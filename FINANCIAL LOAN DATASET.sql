@@ -1,0 +1,177 @@
+use bank;
+
+CREATE TABLE FINANCIAL_LOAN(
+id int,
+address_state VARCHAR(5),
+application_type VARCHAR(20),
+emp_length VARCHAR(15),
+emp_title VARCHAR(80),
+grade VARCHAR(2),
+home_ownership VARCHAR(15),
+issue_date date,
+last_credit_pull_date date,
+last_payment_date date,
+loan_status VARCHAR(15),
+next_payment_date date,
+member_id int,
+purpose VARCHAR(25),
+sub_grade VARCHAR(5),
+term VARCHAR(10),
+verification_status VARCHAR(20),
+annual_income int,
+dti DECIMAL(6,5),
+installment DECIMAL(30,4),
+int_rate DECIMAL(6,5),
+loan_amount INT,
+total_acc INT,
+total_payment INT);
+
+LOAD DATA INFILE
+'E:/financial_loan.csv'
+into table FINANCIAL_LOAN
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+/* Q-1. Total loan applications */
+SELECT COUNT(ID) FROM FINANCIAL_LOAN;
+
+/* Q-2. MTD loan application */
+SELECT COUNT(ID) FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 01 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-3. PMTD loan application */
+select COUNT(ID) FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 12 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-4. Total funded amount */
+SELECT CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') FROM FINANCIAL_LOAN;
+
+/* Q-5. MTD total funded amount */
+SELECT CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') AS 'MTD Total Funded Amount' 
+FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 12 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-6. PMTD Total funded amount */
+SELECT CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') AS 'PMTD Total Funded Amount' 
+FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 11 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-7. Total amount resell */
+SELECT CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2),' M') AS 'TOTAL AMOUNT RESELL' FROM FINANCIAL_LOAN;
+
+/* Q-8. MTD Total amount resell */
+SELECT CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2),' M') 'MTD Total Amount Resell' 
+FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 12 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-9. PMTD Total amount resell */
+SELECT CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2),' M') 'PMTD Total Amount Resell' 
+FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 11 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-10. Avg interest rate */
+SELECT CONCAT(FORMAT(AVG(INT_RATE)*100,2),' %') 'Average Interest Rate' FROM FINANCIAL_LOAN;
+
+/* Q-11. MTD Avg. interest */
+SELECT CONCAT(FORMAT(AVG(INT_RATE)*100,2),' %') 'MTD Average Interest Rate' FROM FINANCIAL_LOAN WHERE
+MONTH(ISSUE_DATE) = 12 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-12. PMTD Avg. interest rate */
+SELECT CONCAT(FORMAT(AVG(INT_RATE)*100,2),' %') 'PMTD Average Interest Rate' FROM FINANCIAL_LOAN WHERE
+MONTH(ISSUE_DATE) = 11 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-13. Avg. DTI (doubt to income) */
+SELECT CONCAT(FORMAT(AVG(DTI)*100,2),' %') 'Average DTI' FROM FINANCIAL_LOAN;
+
+/* Q-14. MTD Avg. DTI */
+SELECT CONCAT(FORMAT(AVG(DTI)*100,2),' %') 'MTD Average DTI' FROM FINANCIAL_LOAN WHERE
+MONTH(ISSUE_DATE) = 12 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-15. PMTD Avg. DTI */
+SELECT CONCAT(FORMAT(AVG(DTI)*100,2),' %') 'PMTD Average DTI' FROM FINANCIAL_LOAN WHERE
+MONTH(ISSUE_DATE) = 11 AND YEAR(ISSUE_DATE) = 2021;
+
+/* Q-16. Good loan percentage */
+SELECT (FORMAT((COUNT(CASE WHEN LOAN_STATUS = 'Fully Paid' or LOAN_STATUS = 'Current' then ID END) * 100) / COUNT(ID),2))
+ 'Good loan Percentage' FROM FINANCIAL_LOAN;
+ 
+/* Q-17. Good loan applications */
+SELECT CONCAT(FORMAT(COUNT(ID)/1000,2),' K') 'Good loan Applications' FROM FINANCIAL_LOAN WHERE 
+LOAN_STATUS IN('Fully Paid' , 'Current');
+
+/* Q-18. Good loan funded amounts */
+SELECT CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Good Loan Funded Amount' FROM FINANCIAL_LOAN
+WHERE LOAN_STATUS IN('Fully Paid' , 'Current');
+
+/* Q-19. Good loan amount received */
+SELECT CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Good Loan Received Amount' FROM FINANCIAL_LOAN 
+WHERE LOAN_STATUS IN('Fully Paid' , 'Current');
+
+/* Q-20. Bad loan percentage */
+SELECT (FORMAT((COUNT(CASE WHEN LOAN_STATUS = 'Charged off' THEN ID END) * 100) / COUNT(ID),2)) 'Bad Loan Percentage' 
+FROM FINANCIAL_LOAN;
+
+/* Q-21. Bad loan applications */
+SELECT CONCAT(FORMAT(COUNT(ID)/1000,2),' K') 'Bad loan Applications' FROM FINANCIAL_LOAN WHERE LOAN_STATUS
+IN('Charged off');
+
+/* Q-22. Bad loan funded amounts */
+SELECT CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Bad Loan Funded Amount' FROM FINANCIAL_LOAN
+WHERE LOAN_STATUS IN('Charged off');
+
+/* Q-23. Bad loan amount received */
+SELECT CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Bad Loan Received Amount' FROM FINANCIAL_LOAN
+WHERE LOAN_STATUS IN('Charged off');
+
+/* Q-24. Loan status - Fully paid, charge off & current */
+SELECT LOAN_STATUS 'Loan Status', CONCAT(FORMAT(COUNT(ID)/1000, 2),' K') 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000, 2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000, 2), ' M') 'Total Amount Received',
+CONCAT(FORMAT(AVG(INT_RATE)*100, 2),' %') 'Average Interest Rate',
+CONCAT(FORMAT(AVG(DTI)*100, 2),' %') 'Average DTI' FROM FINANCIAL_LOAN GROUP BY LOAN_STATUS;
+
+SELECT LOAN_STATUS 'Loan Status',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000, 2), ' M') 'MTD Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000, 2), ' M') 'MTD Total Amount Received'
+FROM FINANCIAL_LOAN WHERE MONTH(ISSUE_DATE) = 12 GROUP BY LOAN_STATUS;
+
+/* Q-25. Terms (Tenure) */
+SELECT TERM 'Term',
+CONCAT(FORMAT(COUNT(ID)/1000,2),' K') 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN
+GROUP BY TERM ORDER BY TERM;
+
+/* Q-26. Employee length */
+SELECT EMP_LENGTH 'Employee length',
+CONCAT(FORMAT(COUNT(ID)/1000,2),' K') 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN
+GROUP BY EMP_LENGTH ORDER BY EMP_LENGTH;
+
+SELECT PURPOSE 'Loan Purpose',
+COUNT(ID) 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN
+GROUP BY PURPOSE ORDER BY PURPOSE;
+
+/* Q-27. Home ownership */
+SELECT HOME_OWNERSHIP 'Home Ownership', COUNT(ID) 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN GROUP BY HOME_OWNERSHIP ORDER BY COUNT(ID) DESC;
+
+SELECT PURPOSE 'Loan Purpose',
+COUNT(ID) 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN
+WHERE GRADE = "A"
+GROUP BY PURPOSE ORDER BY PURPOSE;
+
+SELECT EMP_LENGTH 'Employee length',
+CONCAT(FORMAT(COUNT(ID)/1000,2),' K') 'Total Applications',
+CONCAT(FORMAT(SUM(LOAN_AMOUNT)/1000000,2), ' M') 'Total Funded Amount',
+CONCAT(FORMAT(SUM(TOTAL_PAYMENT)/1000000,2), ' M') 'Total Amount Received'
+FROM FINANCIAL_LOAN
+WHERE GRADE = "A"
+GROUP BY EMP_LENGTH ORDER BY EMP_LENGTH;
